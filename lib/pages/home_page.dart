@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({Key? key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -10,9 +11,11 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final SpeechToText _speechToText = SpeechToText();
+  FlutterTts flutterTts = FlutterTts();
   bool _speechEnabled = false;
   String _wordsSpoken = "";
   double _confidenceLevel = 0;
+
   @override
   void initState() {
     super.initState();
@@ -21,6 +24,7 @@ class _HomePageState extends State<HomePage> {
 
   void initSpeech() async {
     _speechEnabled = await _speechToText.initialize();
+    await flutterTts.setLanguage("es-ES");
     setState(() {});
   }
 
@@ -33,6 +37,7 @@ class _HomePageState extends State<HomePage> {
 
   void _stopListening() async {
     await _speechToText.stop();
+    _speakAfterRecognition();
     setState(() {});
   }
 
@@ -41,6 +46,12 @@ class _HomePageState extends State<HomePage> {
       _wordsSpoken = "${result.recognizedWords}";
       _confidenceLevel = result.confidence;
     });
+  }
+
+  Future<void> _speakAfterRecognition() async {
+    if (!_speechToText.isListening) {
+      await flutterTts.speak(_wordsSpoken);
+    }
   }
 
   @override
@@ -63,23 +74,24 @@ class _HomePageState extends State<HomePage> {
                 _speechToText.isListening
                     ? "listening..."
                     : _speechEnabled
-                        ? "Tap the microphone to star listening..."
+                        ? "Tap the microphone to start listening..."
                         : "Speech not available",
                 style: TextStyle(fontSize: 20.0),
               ),
             ),
             Expanded(
-                child: Container(
-                  padding:EdgeInsets.all(16),
-              child: Text(
-                _wordsSpoken,
+              child: Container(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  _wordsSpoken,
+                ),
               ),
-            )),
+            ),
             if (_speechToText.isNotListening && _confidenceLevel > 0)
               Padding(
-                padding: const EdgeInsets.only(bottom:100,),
+                padding: const EdgeInsets.only(bottom: 100),
                 child: Text(
-                  "condicende: ${(_confidenceLevel * 100).toStringAsFixed(1)}%",
+                  "confidence: ${(_confidenceLevel * 100).toStringAsFixed(1)}%",
                   style: TextStyle(fontSize: 30.0, fontWeight: FontWeight.w200),
                 ),
               )
